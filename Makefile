@@ -16,7 +16,6 @@ manifest: $(MANIFEST)
 .PHONY: build
 build: $(MANIFEST)
 	@docker build -t "$(IMAGE_NAME)" .
-	@echo "Built docker image $(IMAGE_NAME)"
 
 .PHONY: push
 push:

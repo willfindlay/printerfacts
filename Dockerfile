@@ -5,7 +5,9 @@
 #
 # September 16, 2021  William Findlay  Created this.
 
-FROM lukemathwalker/cargo-chef:latest-rust-1.55.0-alpine AS chef
+FROM ekidd/rust-musl-builder:latest AS chef
+USER root
+RUN cargo install cargo-chef
 WORKDIR /app
 
 FROM chef AS planner
@@ -14,14 +16,15 @@ RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef as builder
 COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
+RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
 COPY . .
-RUN cargo build --release
+RUN cargo build --release --target x86_64-unknown-linux-musl
 
-FROM busybox
+FROM alpine
 WORKDIR /app
-COPY --from=builder /app/target/release/hello4000 /app/hello4000
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/hello4000 /app/hello4000
+EXPOSE 4000:4000
 
-ENTRYPOINT ["/app/hello4000"]
+CMD ["/app/hello4000"]
 
 # vi:ft=dockerfile
