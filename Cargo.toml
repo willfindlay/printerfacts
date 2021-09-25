@@ -1,0 +1,23 @@
+[package]
+name = "hello4000"
+version = "0.1.0"
+edition = "2018"
+authors = ["William Findlay williamfindlay@cmail.carleton.ca"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "hello4000"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hello4000"
+path = "src/main.rs"
+
+[dependencies]
+gethostname = "0.2.1"
+pfacts = { git = "https://github.com/willfindlay/pfacts-sfw" }
+rand = "0.8.4"
+rocket = { version = "0.5.0-rc.1" }
+serde_json = "1.0.64"
+serde = "1.0.126"
