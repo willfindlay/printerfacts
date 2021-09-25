@@ -5,6 +5,8 @@
 #
 # September 25, 2021  William Findlay  Created this.
 
+DOCKER_FLAGS =
+
 IMAGE_NAME = wpfindlay/printerfacts:latest
 
 MANIFEST_TEMPLATE = templates/deploy.yml
@@ -15,7 +17,11 @@ manifest: $(MANIFEST)
 
 .PHONY: build
 build: $(MANIFEST)
-	@docker build -t "$(IMAGE_NAME)" .
+	@docker build $(DOCKER_FLAGS) -t "$(IMAGE_NAME)" .
+
+.PHONY: run-local
+run-local: build
+	@docker run -it -p 4000:4000 --rm "$(IMAGE_NAME)"
 
 .PHONY: push
 push:

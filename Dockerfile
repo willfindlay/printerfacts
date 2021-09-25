@@ -20,10 +20,10 @@ RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path r
 COPY . .
 RUN cargo build --release --target x86_64-unknown-linux-musl
 
-FROM alpine
+FROM scratch
 WORKDIR /app
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/hello4000 /app/hello4000
-EXPOSE 4000:4000
+EXPOSE 4000
 
 CMD ["/app/hello4000"]
 
