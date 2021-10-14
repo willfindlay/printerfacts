@@ -78,9 +78,6 @@ async fn rocket() -> _ {
 
     rocket::custom(figment)
         .attach(Counter::default())
-        .attach(Counter::default())
-        .attach(Counter::default())
-        .attach(Counter::default())
         .register("/", catchers![error404])
         .manage(facts)
         .mount("/", routes![index, ferris, fact, credit, crashme])
