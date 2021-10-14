@@ -25,6 +25,6 @@ WORKDIR /app
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/hello4000 /app/hello4000
 EXPOSE 4000
 
-CMD ["/app/hello4000"]
+cmd ["/app/hello4000"]
 
 # vi:ft=dockerfile

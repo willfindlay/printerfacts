@@ -1,10 +1,3 @@
-// SPDX-License-Identifier: MIT
-//
-// Distributed printer facts in Rust, inspired by Christine Dodrill.
-// Copyright (c) 2021  William Findlay
-//
-// September 25, 2021  William Findlay  Created this.
-
 mod fairings;
 
 pub use fairings::Counter;

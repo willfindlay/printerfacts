@@ -1,10 +1,3 @@
-// SPDX-License-Identifier: MIT
-//
-// Distributed printer facts in Rust, inspired by Christine Dodrill.
-// Copyright (c) 2021  William Findlay
-//
-// September 25, 2021  William Findlay  Created this.
-
 use std::{
     io::Cursor,
     sync::atomic::{AtomicUsize, Ordering},
@@ -15,18 +8,9 @@ use rocket::{
     fairing::{Fairing, Info, Kind},
     http::{ContentType, Method, Status},
 };
-use serde::Serialize;
-use serde_json::to_string;
 
 use crate::get_hostname;
 
-#[derive(Serialize)]
-pub struct CounterStats {
-    server: String,
-    counter: usize,
-}
-
-/// Counts how many requests have been served from a given pod.
 #[derive(Default)]
 pub struct Counter {
     requests_served: AtomicUsize,
@@ -41,12 +25,10 @@ impl Fairing for Counter {
         }
     }
 
-    /// Increment request count when receiving a request.
     async fn on_request(&self, _req: &mut rocket::Request<'_>, _data: &mut rocket::Data<'_>) {
         self.requests_served.fetch_add(1, Ordering::Relaxed);
     }
 
-    /// Return request count on GET request to endpoint /count
     async fn on_response<'r>(&self, req: &'r rocket::Request<'_>, res: &mut rocket::Response<'r>) {
         if res.status() != Status::NotFound {
             return;
@@ -55,13 +37,9 @@ impl Fairing for Counter {
         let count = self.requests_served.load(Ordering::Relaxed);
 
         if req.method() == Method::Get && req.uri().path() == "/count" {
-            let body = to_string(&CounterStats {
-                server: get_hostname().await,
-                counter: count.into(),
-            })
-            .unwrap();
+            let body = format!("Requests served from {}: {}\n", get_hostname().await, count);
             res.set_status(Status::Ok);
-            res.set_header(ContentType::JSON);
+            res.set_header(ContentType::Plain);
             res.set_sized_body(body.len(), Cursor::new(body));
         }
     }
