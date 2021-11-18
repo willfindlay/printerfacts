@@ -6,22 +6,40 @@
 // September 16, 2021  William Findlay  Created this.
 
 use rand::{thread_rng, Rng};
-use rocket::{catch, catchers, get, launch, routes, Config, State};
+use rocket::{catch, catchers, delete, get, launch, post, put, routes, Config, State};
+use rocket_contrib::json::Json;
+use std::env;
 
 use hello4000::*;
 
 #[get("/")]
 async fn index() -> String {
     format!(
-        "Hello k8s world! I am a simple server running on pod {}\n",
-        get_hostname().await
+        "Hello k8s world! I am a simple server running on node {} in pod {}\n",
+        get_nodename(),
+        get_hostname()
     )
 }
 
-#[get("/printerfacts")]
-async fn fact(facts: &State<pfacts::Facts>) -> String {
+#[post("/fact")]
+async fn create_fact(facts: &State<pfacts::Facts>) -> String {
+    todo!()
+}
+
+#[get("/fact")]
+async fn read_fact(facts: &State<pfacts::Facts>) -> String {
     let i = thread_rng().gen_range(0..facts.len());
     format!("New printer fact: {}\n", facts[i])
+}
+
+#[put("/fact")]
+async fn update_fact(facts: &State<pfacts::Facts>) -> String {
+    todo!()
+}
+
+#[delete("/fact")]
+async fn delete_fact(facts: &State<pfacts::Facts>) -> String {
+    todo!()
 }
 
 #[get("/crashme")]
@@ -80,5 +98,17 @@ async fn rocket() -> _ {
         .attach(Counter::default())
         .register("/", catchers![error404])
         .manage(facts)
-        .mount("/", routes![index, ferris, fact, credit, crashme])
+        .mount(
+            "/",
+            routes![
+                index,
+                ferris,
+                create_fact,
+                read_fact,
+                update_fact,
+                delete_fact,
+                credit,
+                crashme
+            ],
+        )
 }

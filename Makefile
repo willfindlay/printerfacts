@@ -7,28 +7,32 @@
 
 DOCKER_FLAGS =
 
-IMAGE_NAME = wpfindlay/printerfacts:latest
+IMAGE_NAME = wpfindlay/printerfacts2:latest
 
 MANIFEST_TEMPLATE = templates/deploy.yml
 MANIFEST = manifest/deploy.yml
 
-.PHONY: manifest
-manifest: $(MANIFEST)
-
 .PHONY: build
 build: $(MANIFEST)
 	@docker build $(DOCKER_FLAGS) -t "$(IMAGE_NAME)" .
+
+.PHONY: deploy
+deploy: push
+	@scripts/deploy.sh "$(MANIFEST)"
+
+.PHONY: manifest
+manifest: $(MANIFEST)
 
 .PHONY: run-local
 run-local: build
 	@docker run -it -p 4000:4000 --rm "$(IMAGE_NAME)"
 
 .PHONY: push
-push:
+push: build
 	@docker push "$(IMAGE_NAME)"
 
-$(MANIFEST): $(MANIFEST_TEMPLATE)
-	@sed -e '' "$(MANIFEST_TEMPLATE)" > "$(MANIFEST)"
+$(MANIFEST): $(MANIFEST_TEMPLATE) Makefile
+	sed -e "s/(IMAGE_NAME)/$(subst /,\\/,$(IMAGE_NAME))/g" "$(MANIFEST_TEMPLATE)" > "$(MANIFEST)"
 	@echo "Production manifest is located at $(MANIFEST)"
 
 # vi:ft=make

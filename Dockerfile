@@ -5,7 +5,7 @@
 #
 # September 16, 2021  William Findlay  Created this.
 
-FROM ekidd/rust-musl-builder:latest AS chef
+FROM wpfindlay/rust-musl-builder:nightly-2021-11-12 AS chef
 USER root
 RUN cargo install cargo-chef
 WORKDIR /app

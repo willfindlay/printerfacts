@@ -9,7 +9,7 @@ use rocket::{
     http::{ContentType, Method, Status},
 };
 
-use crate::get_hostname;
+use crate::{get_hostname, get_nodename};
 
 #[derive(Default)]
 pub struct Counter {
@@ -37,7 +37,12 @@ impl Fairing for Counter {
         let count = self.requests_served.load(Ordering::Relaxed);
 
         if req.method() == Method::Get && req.uri().path() == "/count" {
-            let body = format!("Requests served from {}: {}\n", get_hostname().await, count);
+            let body = format!(
+                "Requests served from {} on node {}: {}\n",
+                get_hostname(),
+                get_nodename(),
+                count
+            );
             res.set_status(Status::Ok);
             res.set_header(ContentType::Plain);
             res.set_sized_body(body.len(), Cursor::new(body));

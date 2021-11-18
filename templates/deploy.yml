@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: comp4000
+  name: comp4000server
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: comp4000
+      component: server
+  template:
+    metadata:
+      labels:
+        app: comp4000
+        component: server
+    spec:
+      containers:
+      - name: comp4000server
+        image: (IMAGE_NAME)
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 4000
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: comp4000
+  name: comp4000balancer
+spec:
+  type: LoadBalancer
+  selector:
+    app: comp4000
+    component: server
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 4000
