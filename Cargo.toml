@@ -25,5 +25,9 @@ rocket_contrib = "0.4.10"
 cassandra-cpp = "0.17.0"
 anyhow = "1.0.45"
 cdrs = { git = "https://github.com/AlexPikalov/cdrs" }
+cdrs_helpers_derive = "0.4.0"
+tokio-stream = "0.1.8"
+futures = "0.3.17"
+structopt = "0.3.25"
 
 [features]

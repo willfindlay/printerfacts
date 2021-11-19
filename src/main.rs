@@ -5,20 +5,22 @@
 //
 // September 16, 2021  William Findlay  Created this.
 
-use std::io::Read;
-use std::{env, process::Command};
+use std::env;
 
-use anyhow::Result;
-use cdrs::{
-    authenticators::StaticPasswordAuthenticator,
-    cluster::{session::new as new_session, ClusterTcpConfig, NodeTcpConfig, NodeTcpConfigBuilder},
-    load_balancing::SingleNode,
-};
+use anyhow::{Context, Result};
 use rand::{thread_rng, Rng};
-use rocket::{catch, catchers, delete, get, launch, post, put, routes, Config, State};
+use rocket::tokio;
+use rocket::{catch, catchers, delete, get, post, put, routes, Config, State};
 use rocket_contrib::json::Json;
+use structopt::StructOpt;
 
 use hello4000::*;
+
+#[derive(Debug, StructOpt)]
+struct Opt {
+    #[structopt(long)]
+    migrations: bool,
+}
 
 #[get("/")]
 async fn index() -> String {
@@ -96,21 +98,31 @@ async fn error404() -> &'static str {
     "#
 }
 
-#[launch]
-async fn rocket() -> _ {
+#[tokio::main]
+async fn main() -> Result<()> {
+    let args = Opt::from_args();
+
+    // Cassandra setup
+    let username = "student";
+    let password = "student";
+    let cassandra_ip = get_cassandra_addr().context("Failed to get Cassandra IP")?;
+    let facts = FactsContext::new(username, password, &cassandra_ip)?;
+
+    if args.migrations {
+        facts
+            .migrations()
+            .await
+            .context("Failed to run migrations")?;
+        return Ok(());
+    }
+
+    launch(facts).await
+}
+
+async fn launch(facts: FactsContext) -> Result<()> {
     let figment = Config::figment()
         .merge(("address", "0.0.0.0"))
         .merge(("port", 4000u32));
-
-    // Cassandra setup
-    let username = "cassandra";
-    let password = "1337h4x0r";
-    let cassandra_ip = get_cassandra_ip().expect("No Cassandra IP in environment");
-    let auth = StaticPasswordAuthenticator::new(&username, &password);
-    let nodes = vec![NodeTcpConfigBuilder::new(&cassandra_ip, auth).build()];
-    let config = ClusterTcpConfig(nodes);
-    let session = new_session(&config, SingleNode::new()).expect("Failed to connect to Cassandra");
-    let facts = FactsContext::new(session).expect("Failed to spawn connection to Cassandra");
 
     rocket::custom(figment)
         .attach(Counter::default())
@@ -129,18 +141,13 @@ async fn rocket() -> _ {
                 crashme
             ],
         )
+        .launch()
+        .await?;
+
+    Ok(())
 }
 
-fn get_cassandra_ip() -> Result<String> {
-    let kube_args = vec![
-        "get",
-        "svc",
-        "--namespace",
-        "default",
-        "cassandra",
-        "--template",
-        "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}",
-    ];
-    let ip = String::from_utf8(Command::new("kubectl").args(kube_args).output()?.stdout)?;
+fn get_cassandra_addr() -> Result<String> {
+    let ip = env::var("CASSANDRA_IP").context("No CASSANDRA_IP in environment")?;
     Ok(format!("{}:9042", ip))
 }

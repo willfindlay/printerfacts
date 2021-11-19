@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate cdrs_helpers_derive;
+
 mod facts;
 mod fairings;
 

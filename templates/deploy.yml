@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app: comp4000
-  name: comp4000server
+  name: server
 spec:
   replicas: 5
   selector:
@@ -17,7 +17,7 @@ spec:
         component: server
     spec:
       containers:
-      - name: comp4000server
+      - name: printerfacts
         image: (IMAGE_NAME)
         imagePullPolicy: Always
         ports:
@@ -27,6 +27,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+          - name: CASSANDRA_IP
+            value: 10.96.0.200
 
 ---
 
@@ -35,10 +37,11 @@ kind: Service
 metadata:
   labels:
     app: comp4000
-    component: client
-  name: comp4000balancer
+    component: server
+  name: printerfacts
 spec:
   type: LoadBalancer
+  clusterIP: 10.96.0.201
   selector:
     app: comp4000
     component: server
