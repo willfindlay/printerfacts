@@ -5,10 +5,18 @@
 //
 // September 16, 2021  William Findlay  Created this.
 
+use std::io::Read;
+use std::{env, process::Command};
+
+use anyhow::Result;
+use cdrs::{
+    authenticators::StaticPasswordAuthenticator,
+    cluster::{session::new as new_session, ClusterTcpConfig, NodeTcpConfig, NodeTcpConfigBuilder},
+    load_balancing::SingleNode,
+};
 use rand::{thread_rng, Rng};
 use rocket::{catch, catchers, delete, get, launch, post, put, routes, Config, State};
 use rocket_contrib::json::Json;
-use std::env;
 
 use hello4000::*;
 
@@ -22,23 +30,24 @@ async fn index() -> String {
 }
 
 #[post("/fact")]
-async fn create_fact(facts: &State<pfacts::Facts>) -> String {
+async fn create_fact(facts: &State<FactsContext>) -> String {
     todo!()
 }
 
 #[get("/fact")]
-async fn read_fact(facts: &State<pfacts::Facts>) -> String {
-    let i = thread_rng().gen_range(0..facts.len());
-    format!("New printer fact: {}\n", facts[i])
+async fn read_fact(facts: &State<FactsContext>) -> String {
+    todo!()
+    // let i = thread_rng().gen_range(0..facts.len());
+    // format!("New printer fact: {}\n", facts[i])
 }
 
 #[put("/fact")]
-async fn update_fact(facts: &State<pfacts::Facts>) -> String {
+async fn update_fact(facts: &State<FactsContext>) -> String {
     todo!()
 }
 
 #[delete("/fact")]
-async fn delete_fact(facts: &State<pfacts::Facts>) -> String {
+async fn delete_fact(facts: &State<FactsContext>) -> String {
     todo!()
 }
 
@@ -91,8 +100,17 @@ async fn error404() -> &'static str {
 async fn rocket() -> _ {
     let figment = Config::figment()
         .merge(("address", "0.0.0.0"))
-        .merge(("port", 4000));
-    let facts = pfacts::make();
+        .merge(("port", 4000u32));
+
+    // Cassandra setup
+    let username = "cassandra";
+    let password = "1337h4x0r";
+    let cassandra_ip = get_cassandra_ip().expect("No Cassandra IP in environment");
+    let auth = StaticPasswordAuthenticator::new(&username, &password);
+    let nodes = vec![NodeTcpConfigBuilder::new(&cassandra_ip, auth).build()];
+    let config = ClusterTcpConfig(nodes);
+    let session = new_session(&config, SingleNode::new()).expect("Failed to connect to Cassandra");
+    let facts = FactsContext::new(session).expect("Failed to spawn connection to Cassandra");
 
     rocket::custom(figment)
         .attach(Counter::default())
@@ -111,4 +129,18 @@ async fn rocket() -> _ {
                 crashme
             ],
         )
+}
+
+fn get_cassandra_ip() -> Result<String> {
+    let kube_args = vec![
+        "get",
+        "svc",
+        "--namespace",
+        "default",
+        "cassandra",
+        "--template",
+        "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}",
+    ];
+    let ip = String::from_utf8(Command::new("kubectl").args(kube_args).output()?.stdout)?;
+    Ok(format!("{}:9042", ip))
 }

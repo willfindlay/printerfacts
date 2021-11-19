@@ -35,6 +35,7 @@ kind: Service
 metadata:
   labels:
     app: comp4000
+    component: client
   name: comp4000balancer
 spec:
   type: LoadBalancer
