@@ -4,7 +4,7 @@ extern crate cdrs_helpers_derive;
 mod facts;
 mod fairings;
 
-pub use facts::FactsContext;
+pub use facts::{Fact, FactsContext};
 pub use fairings::Counter;
 use std::env;
 

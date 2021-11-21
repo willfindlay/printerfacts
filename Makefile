@@ -11,6 +11,8 @@ IMAGE_NAME = wpfindlay/printerfacts2:latest
 
 MANIFEST_TEMPLATE = templates/deploy.yml
 MANIFEST = manifest/deploy.yml
+MIGRATIONS_TEMPLATE = templates/migrations.yml
+MIGRATIONS = manifest/migrations.yml
 
 .PHONY: build
 build: $(MANIFEST)
@@ -18,10 +20,10 @@ build: $(MANIFEST)
 
 .PHONY: deploy
 deploy: push
-	@scripts/deploy.sh "$(MANIFEST)"
+	@scripts/deploy.sh "$(MANIFEST)" "$(MIGRATIONS)"
 
 .PHONY: manifest
-manifest: $(MANIFEST)
+manifest: $(MANIFEST) $(MIGRATIONS)
 
 .PHONY: run-local
 run-local: build
@@ -34,5 +36,9 @@ push: build
 $(MANIFEST): $(MANIFEST_TEMPLATE) Makefile
 	sed -e "s/(IMAGE_NAME)/$(subst /,\\/,$(IMAGE_NAME))/g" "$(MANIFEST_TEMPLATE)" > "$(MANIFEST)"
 	@echo "Production manifest is located at $(MANIFEST)"
+
+$(MIGRATIONS): $(MIGRATIONS_TEMPLATE) Makefile
+	sed -e "s/(IMAGE_NAME)/$(subst /,\\/,$(IMAGE_NAME))/g" "$(MIGRATIONS_TEMPLATE)" > "$(MIGRATIONS)"
+	@echo "Production manifest is located at $(MIGRATIONS)"
 
 # vi:ft=make

@@ -8,13 +8,14 @@
 use std::env;
 
 use anyhow::{Context, Result};
-use rand::{thread_rng, Rng};
+use rand::{seq::SliceRandom, thread_rng};
 use rocket::tokio;
 use rocket::{catch, catchers, delete, get, post, put, routes, Config, State};
-use rocket_contrib::json::Json;
+use rocket::{serde::json::Json, serde::uuid::Uuid};
 use structopt::StructOpt;
 
 use hello4000::*;
+//use uuid::Uuid;
 
 #[derive(Debug, StructOpt)]
 struct Opt {
@@ -31,26 +32,63 @@ async fn index() -> String {
     )
 }
 
-#[post("/fact")]
-async fn create_fact(facts: &State<FactsContext>) -> String {
-    todo!()
+#[get("/fact/keys")]
+async fn get_keys(facts: &State<FactsContext>) -> Result<Json<Vec<Uuid>>, String> {
+    Ok(Json(
+        facts.get_keys().await.map_err(|e| format!("{:?}", e))?,
+    ))
+}
+
+#[post("/fact", format = "json", data = "<fact>")]
+async fn create_fact(fact: Json<Fact>, facts: &State<FactsContext>) -> Result<(), String> {
+    facts
+        .create_fact(&fact.0.fact, &fact.0.kind)
+        .await
+        .map_err(|e| format!("{:?}", e))?;
+    Ok(())
+}
+
+#[get("/fact/<key>")]
+async fn read_fact(key: Uuid, facts: &State<FactsContext>) -> Result<Json<Fact>, String> {
+    Ok(Json(
+        facts.read_fact(key).await.map_err(|e| format!("{:?}", e))?,
+    ))
 }
 
 #[get("/fact")]
-async fn read_fact(facts: &State<FactsContext>) -> String {
-    todo!()
-    // let i = thread_rng().gen_range(0..facts.len());
-    // format!("New printer fact: {}\n", facts[i])
+async fn random_fact(facts: &State<FactsContext>) -> Result<Json<Fact>, String> {
+    let keys = facts.get_keys().await.map_err(|e| format!("{:?}", e))?;
+    let key = keys
+        .choose(&mut thread_rng())
+        .ok_or("Failed to choose random key")?;
+    Ok(Json(
+        facts
+            .read_fact(key.clone())
+            .await
+            .map_err(|e| format!("{:?}", e))?,
+    ))
 }
 
-#[put("/fact")]
-async fn update_fact(facts: &State<FactsContext>) -> String {
-    todo!()
+#[put("/fact/<key>", format = "json", data = "<fact>")]
+async fn update_fact(
+    key: Uuid,
+    fact: Json<Fact>,
+    facts: &State<FactsContext>,
+) -> Result<(), String> {
+    facts
+        .update_fact(&fact.0.fact, &fact.0.kind, key)
+        .await
+        .map_err(|e| format!("{:?}", e))?;
+    Ok(())
 }
 
-#[delete("/fact")]
-async fn delete_fact(facts: &State<FactsContext>) -> String {
-    todo!()
+#[delete("/fact/<key>")]
+async fn delete_fact(key: Uuid, facts: &State<FactsContext>) -> Result<(), String> {
+    facts
+        .delete_fact(key)
+        .await
+        .map_err(|e| format!("{:?}", e))?;
+    Ok(())
 }
 
 #[get("/crashme")]
@@ -98,6 +136,12 @@ async fn error404() -> &'static str {
     "#
 }
 
+#[catch(500)]
+async fn error500() -> &'static str {
+    r#"It's not a bug, it's a feature! (Internal Server Error)
+    "#
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Opt::from_args();
@@ -126,13 +170,15 @@ async fn launch(facts: FactsContext) -> Result<()> {
 
     rocket::custom(figment)
         .attach(Counter::default())
-        .register("/", catchers![error404])
+        .register("/", catchers![error404, error500])
         .manage(facts)
         .mount(
             "/",
             routes![
                 index,
                 ferris,
+                get_keys,
+                random_fact,
                 create_fact,
                 read_fact,
                 update_fact,

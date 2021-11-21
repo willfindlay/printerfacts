@@ -18,16 +18,15 @@ path = "src/main.rs"
 gethostname = "0.2.1"
 pfacts = { git = "https://github.com/willfindlay/pfacts-sfw", branch = "main" }
 rand = "0.8.4"
-rocket = { version = "0.5.0-rc.1", features = ["tls"] }
+rocket = { version = "0.5.0-rc.1", features = ["tls", "json", "uuid"] }
 serde_json = "1.0.64"
 serde = "1.0.126"
-rocket_contrib = "0.4.10"
-cassandra-cpp = "0.17.0"
 anyhow = "1.0.45"
 cdrs = { git = "https://github.com/AlexPikalov/cdrs" }
-cdrs_helpers_derive = "0.4.0"
+cdrs_helpers_derive = { git = "https://github.com/AlexPikalov/cdrs-helpers-derive" }
 tokio-stream = "0.1.8"
 futures = "0.3.17"
 structopt = "0.3.25"
+uuid = { version = "0.8.2", features = ["serde"] }
 
 [features]

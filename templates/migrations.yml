@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrations
+spec:
+  template:
+    spec:
+      containers:
+      - name: migrations
+        image: (IMAGE_NAME)
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: CASSANDRA_IP
+            value: 10.96.0.200
+        command: ["/app/hello4000", "--migrations"]
+      restartPolicy: Never
+  backoffLimit: 4
+  ttlSecondsAfterFinished: 20
