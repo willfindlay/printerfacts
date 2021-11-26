@@ -147,10 +147,10 @@ async fn main() -> Result<()> {
     let args = Opt::from_args();
 
     // Cassandra setup
-    let username = "student";
-    let password = "student";
+    // let username = "student";
+    // let password = "student";
     let cassandra_ip = get_cassandra_addr().context("Failed to get Cassandra IP")?;
-    let facts = FactsContext::new(username, password, &cassandra_ip)?;
+    let facts = FactsContext::new(&cassandra_ip)?;
 
     if args.migrations {
         facts

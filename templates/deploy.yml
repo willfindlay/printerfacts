@@ -5,7 +5,7 @@ metadata:
     app: comp4000
   name: server
 spec:
-  replicas: 5
+  replicas: 10
   selector:
     matchLabels:
       app: comp4000
@@ -16,6 +16,16 @@ spec:
         app: comp4000
         component: server
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchLabels:
+                    app: comp4000
+                    component: server
       containers:
       - name: printerfacts
         image: (IMAGE_NAME)
